@@ -11,17 +11,12 @@
       padding: 2rem;
     }
     h1 { color: #00d2ff; }
-    .status {
-      margin: 1rem 0;
-      font-size: 1.2rem;
-    }
-    .today-highlight {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-top: 1rem;
-    }
+    .status { margin: 1rem 0; font-size: 1.2rem; }
+    .status-line { margin: 0.5rem 0; }
+    .highlight { font-weight: bold; font-size: 1.3rem; }
+    .table-container { margin-top: 2rem; }
     table {
-      width: 100%; margin-top: 2rem;
+      width: 100%;
       border-collapse: collapse;
     }
     th, td {
@@ -31,25 +26,30 @@
     }
     .odd { color: #f39c12; }
     .even { color: #3498db; }
+    .current-month {
+      background-color: #222;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
 <h1>💧 Water Supply Tracker</h1>
 
-<div class="today-highlight" id="todayStatus"></div>
-<div class="status" id="nextDate"></div>
+<div class="status" id="statusLines"></div>
 
-<h2>📅 Monthly Pattern</h2>
-<table>
-  <thead>
-    <tr><th>Month</th><th>Pattern</th></tr>
-  </thead>
-  <tbody id="monthList"></tbody>
-</table>
+<div class="table-container">
+  <h2>📅 Monthly Pattern</h2>
+  <table>
+    <thead>
+      <tr><th>Month</th><th>Pattern</th></tr>
+    </thead>
+    <tbody id="monthList"></tbody>
+  </table>
+</div>
 
 <script>
-  const startMonth = 4; // May (0-indexed)
+  const startMonth = 4; // May
   const startYear = 2025;
   const startPattern = 'Even';
 
@@ -61,8 +61,12 @@
 
     for (let i = 0; i < months; i++) {
       const date = new Date(y, m);
-      const name = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-      result.push({ name, year: y, month: m, pattern });
+      result.push({
+        name: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
+        year: y,
+        month: m,
+        pattern
+      });
 
       const daysInMonth = new Date(y, m + 1, 0).getDate();
       if (daysInMonth % 2 === 1) pattern = (pattern === 'Odd') ? 'Even' : 'Odd';
@@ -76,46 +80,49 @@
     return result;
   }
 
-  function getMonthPattern(date, patternList) {
-    return patternList.find(p =>
-      p.year === date.getFullYear() && p.month === date.getMonth()
-    )?.pattern;
+  function getMonthPattern(date, list) {
+    return list.find(p => p.year === date.getFullYear() && p.month === date.getMonth())?.pattern;
   }
 
   function isWaterDay(date, patternList) {
     const pattern = getMonthPattern(date, patternList);
     if (!pattern) return false;
-
     const day = date.getDate();
     return (pattern === 'Odd' && day % 2 === 1) || (pattern === 'Even' && day % 2 === 0);
   }
 
-  function getNextWaterDate(fromDate, patternList) {
-    let date = new Date(fromDate);
-    const isTodayWater = isWaterDay(date, patternList);
-    if (isTodayWater) date.setDate(date.getDate() + 2);
-    else date.setDate(date.getDate() + 1);
+  const patternList = getPatternList();
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
-    while (!isWaterDay(date, patternList)) {
-      date.setDate(date.getDate() + 1);
-    }
-    return date;
+  const todayWater = isWaterDay(today, patternList);
+  const tomorrowWater = isWaterDay(tomorrow, patternList);
+
+  const statusDiv = document.getElementById("statusLines");
+  const makeLine = (label, isWater) =>
+    `<div class="status-line">${label} : <span class="highlight">${isWater ? '💧 Water Day' : '🚫 No Water'}</span></div>`;
+
+  statusDiv.innerHTML = makeLine('Today', todayWater);
+  if (!todayWater) {
+    statusDiv.innerHTML += makeLine('Tomorrow', tomorrowWater);
   }
 
-  const patternList = getPatternList(36);
-  const today = new Date();
-  const todayWater = isWaterDay(today, patternList);
-  const nextWater = getNextWaterDate(today, patternList);
-
-  const todayStatus = document.getElementById("todayStatus");
-  const nextDate = document.getElementById("nextDate");
-
-  todayStatus.textContent = `Today (${today.toDateString()}): ${todayWater ? '💧 Water Day' : '🚫 No Water'}`;
-  nextDate.textContent = `Next Water Day: ${nextWater.toDateString()}`;
+  // Month Table: only prev, current, next month
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const filtered = patternList.filter(p =>
+    (p.year === currentYear && Math.abs(p.month - currentMonth) <= 1) ||
+    (p.year === currentYear - 1 && currentMonth === 0 && p.month === 11) ||
+    (p.year === currentYear + 1 && currentMonth === 11 && p.month === 0)
+  );
 
   const tbody = document.getElementById("monthList");
-  patternList.forEach(p => {
+  filtered.forEach(p => {
     const tr = document.createElement("tr");
+    if (p.year === currentYear && p.month === currentMonth) {
+      tr.classList.add("current-month");
+    }
     const td1 = document.createElement("td");
     const td2 = document.createElement("td");
     td1.textContent = p.name;
