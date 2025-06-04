@@ -3,32 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <title>Water Supply Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: sans-serif;
-      background: #111;
-      color: #eee;
-      padding: 2rem;
+    :root {
+      --bg: #111;
+      --fg: #eee;
+      --accent: #00d2ff;
+      --odd: #f39c12;
+      --even: #3498db;
     }
-    h1 { color: #00d2ff; }
-    .status { margin: 1rem 0; font-size: 1.2rem; }
-    .status-line { margin: 0.5rem 0; }
-    .highlight { font-weight: bold; font-size: 1.3rem; }
-    .table-container { margin-top: 2rem; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      padding: 1.5rem;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .status {
+      margin: 1rem 0;
+      font-size: 1.2rem;
+    }
+
+    .status-line {
+      margin: 0.5rem 0;
+    }
+
+    .highlight {
+      font-weight: bold;
+      font-size: 1.3rem;
+    }
+
+    .table-container {
+      margin-top: 2rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
+      min-width: 300px;
       border-collapse: collapse;
     }
+
     th, td {
-      padding: 0.5rem 1rem;
+      padding: 0.7rem 1rem;
       border: 1px solid #333;
       text-align: left;
+      white-space: nowrap;
     }
-    .odd { color: #f39c12; }
-    .even { color: #3498db; }
+
+    .odd { color: var(--odd); }
+    .even { color: var(--even); }
     .current-month {
       background-color: #222;
       font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .status {
+        font-size: 1rem;
+      }
+      .highlight {
+        font-size: 1.2rem;
+      }
+      h2 {
+        font-size: 1rem;
+      }
+      th, td {
+        padding: 0.6rem;
+      }
     }
   </style>
 </head>
@@ -40,12 +104,14 @@
 
 <div class="table-container">
   <h2>📅 Monthly Pattern</h2>
-  <table>
-    <thead>
-      <tr><th>Month</th><th>Pattern</th></tr>
-    </thead>
-    <tbody id="monthList"></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Month</th><th>Pattern</th></tr>
+      </thead>
+      <tbody id="monthList"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -108,7 +174,6 @@
     statusDiv.innerHTML += makeLine('Tomorrow', tomorrowWater);
   }
 
-  // Month Table: only prev, current, next month
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
   const filtered = patternList.filter(p =>
